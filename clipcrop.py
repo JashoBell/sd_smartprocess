@@ -7,7 +7,7 @@ import numpy
 import numpy as np
 import torch
 from PIL import Image
-from clip import clip
+import open_clip as clip
 from transformers import CLIPProcessor, CLIPModel, pipeline
 
 import modules.paths
@@ -30,7 +30,10 @@ def clip_boxes(boxes, shape):
 def find_position(parent: Image, child: Image):
     w = child.width
     h = child.height
-    res = cv2.matchTemplate(np.array(parent), np.array(child), cv2.TM_CCOEFF_NORMED)
+    res = cv2.matchTemplate(
+        np.array(parent),
+        np.array(child),
+        cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
     top_left = max_loc
@@ -54,6 +57,10 @@ class CropClip:
             pass
 
     def get_center(self, image: Image, prompt: str):
+        # New clip model
+        clip_model_name = 'ViT-H-14'
+        pretrained_model_name = 'laion2b_s32b_b79k'
+        
         # Load image into YOLO parser
         results = self.model(image)  # includes NMS
         # Crop each image result to an array
@@ -65,7 +72,7 @@ class CropClip:
             l = [image]
         device = shared.device
         # Take out cropped YOLO images, and get the features?
-        model, preprocess = clip.load("ViT-B/32", device=device)
+        model, preprocess = clip.create_model_from_pretrained(clip_model_name, pretrained_model_name, device=device)
         images = torch.stack([preprocess(im) for im in l]).to(device)
         with torch.no_grad():
             image_features = model.encode_image(images)
@@ -104,7 +111,7 @@ class CropClip:
         similarity = similarity[0]
         scores, imgs = similarity_top(similarity, N=1)
         out = imgs[0]
-        res = cv2.matchTemplate(numpy.array(image), numpy.array(out), cv2.TM_SQDIFF)
+        res = cv2.matchTemplate(numpy.array(image), numpy.array(out), cv2.TM_SQDIFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
         # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
         top_left = min_loc

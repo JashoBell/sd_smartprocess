@@ -180,11 +180,12 @@ def prework(src,
         caption = caption.strip()
         if replace_class and subject is not None and subject_class is not None:
             # Find and replace "a SUBJECT CLASS" in caption with subject name
-            if f"a {subject_class}" in caption:
-                caption = caption.replace(f"a {subject_class}", subject)
-
-            if subject_class in caption:
-                caption = caption.replace(subject_class, subject)
+            split_class = subject_class.split(", ")
+            for class_name in split_class:
+                if f"a {class_name}" in caption:
+                    caption = caption.replace(f"a {class_name}", subject)
+                if class_name in caption:
+                    caption = caption.replace(class_name, subject)
 
         if 0 < caption_length < len(caption):
             split_cap = caption.split(" ")
